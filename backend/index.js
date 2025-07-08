@@ -21,7 +21,7 @@ app.use('/api/programs', programRoutes);
 app.use('/api/payments', paymentRoutes); // future Stripe integration
 
 // Root route
-app.get("/", (req, res) => res.send("Gym Backend is running ✅"));
+app.get("/", (req, res) => res.send("Gym Backend is running"));
 
 // Error handler (always after routes)
 const errorHandler = require('./middleware/errorHandler');

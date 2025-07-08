@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Form, Button, Container, Card, Alert } from "react-bootstrap";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -61,6 +61,12 @@ const Login = () => {
             Login
           </Button>
         </Form>
+        <div className="text-center mt-3">
+          <span>Don't have an account? </span>
+          <Link to="/register" className="text-primary" style={{ textDecoration: 'underline' }}>
+            Register
+          </Link>
+        </div>
       </Card>
     </Container>
   );

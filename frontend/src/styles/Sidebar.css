@@ -28,3 +28,18 @@
   font-weight: 500;
   text-decoration: none;
 }
+
+
+.member-layout {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
+.card-header {
+  font-size: 1rem;
+  background-color: #f1f1f1;
+}
+
+.card-body p {
+  margin-bottom: 0.5rem;
+}

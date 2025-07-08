@@ -20,14 +20,24 @@ model User {
 }
 
 model Program {
-  id         String      @id @default(uuid())
-  type       ProgramType
-  title      String
+  id          String         @id @default(uuid())
+  type        ProgramType
+  title       String
   description String?
-  contentUrl String      // Firebase media link
-  user       User        @relation(fields: [userId], references: [id])
-  userId     String
-  createdAt  DateTime    @default(now())
+  user        User           @relation(fields: [userId], references: [id])
+  userId      String
+  items       ProgramItem[]  
+  createdAt   DateTime       @default(now())
+}
+
+model ProgramItem {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  mediaUrl    String
+  program     Program  @relation(fields: [programId], references: [id])
+  programId   String
+  createdAt   DateTime @default(now())
 }
 
 model Payment {

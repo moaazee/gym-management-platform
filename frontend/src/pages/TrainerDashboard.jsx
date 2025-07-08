@@ -13,7 +13,6 @@ import axios from "axios";
 import Sidebar from "../components/Sidebar";
 import "../styles/Sidebar.css";
 
-
 const API = import.meta.env.VITE_API_URL;
 
 const TrainerDashboard = () => {
@@ -21,10 +20,8 @@ const TrainerDashboard = () => {
   const [selectedMember, setSelectedMember] = useState(null);
   const [showTrainingModal, setShowTrainingModal] = useState(false);
   const [showMealModal, setShowMealModal] = useState(false);
-  const [programData, setProgramData] = useState({ title: "", description: "" });
-  const [mealData, setMealData] = useState({ title: "", description: "" });
-  const [file, setFile] = useState(null);
-  const [mealFile, setMealFile] = useState(null);
+  const [programData, setProgramData] = useState({ title: "", description: "", items: [] });
+  const [mealData, setMealData] = useState({ title: "", description: "", items: [] });
   const [success, setSuccess] = useState("");
 
   const token = localStorage.getItem("token");
@@ -43,9 +40,6 @@ const TrainerDashboard = () => {
       console.error("Failed to load members", err);
     }
   };
-
-  const handleFileChange = (e) => setFile(e.target.files[0]);
-  const handleMealFileChange = (e) => setMealFile(e.target.files[0]);
 
   const openTrainingModal = (member) => {
     setSelectedMember(member);
@@ -68,32 +62,81 @@ const TrainerDashboard = () => {
     }
   };
 
+  const handleItemChange = (type, index, field, value) => {
+    const data = type === "training" ? [...programData.items] : [...mealData.items];
+    data[index][field] = value;
+    if (type === "training") {
+      setProgramData({ ...programData, items: data });
+    } else {
+      setMealData({ ...mealData, items: data });
+    }
+  };
+
+  const handleFileChange = (type, index, file) => {
+    const data = type === "training" ? [...programData.items] : [...mealData.items];
+    data[index].file = file;
+    if (type === "training") {
+      setProgramData({ ...programData, items: data });
+    } else {
+      setMealData({ ...mealData, items: data });
+    }
+  };
+
+  const addItem = (type) => {
+    const newItem = { title: "", description: "", file: null };
+    if (type === "training") {
+      setProgramData({ ...programData, items: [...programData.items, newItem] });
+    } else {
+      setMealData({ ...mealData, items: [...mealData.items, newItem] });
+    }
+  };
+
+  const removeItem = (type, index) => {
+    const items = type === "training" ? [...programData.items] : [...mealData.items];
+    items.splice(index, 1);
+    if (type === "training") {
+      setProgramData({ ...programData, items });
+    } else {
+      setMealData({ ...mealData, items });
+    }
+  };
+
   const handleAssign = async (type) => {
     try {
-      let uploadedUrl = null;
-      const data = type === "training" ? file : mealFile;
-      const body = type === "training" ? programData : mealData;
+      const data = type === "training" ? programData : mealData;
       const modalSetter = type === "training" ? setShowTrainingModal : setShowMealModal;
 
-      if (data) {
-        const formData = new FormData();
-        formData.append("file", data);
-        const uploadRes = await axios.post(`${API}/programs/upload`, formData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
+      const uploadedItems = [];
+
+      for (const item of data.items) {
+        let mediaUrl = "";
+        if (item.file) {
+          const formData = new FormData();
+          formData.append("file", item.file);
+          const uploadRes = await axios.post(`${API}/programs/upload`, formData, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "multipart/form-data",
+            },
+          });
+          mediaUrl = uploadRes.data.url;
+        }
+
+        uploadedItems.push({
+          title: item.title,
+          description: item.description,
+          mediaUrl,
         });
-        uploadedUrl = uploadRes.data.url;
       }
 
       await axios.post(
         `${API}/programs/assign`,
         {
-          ...body,
+          title: data.title,
+          description: data.description,
           userId: selectedMember.id,
-          mediaUrl: uploadedUrl,
           type,
+          items: uploadedItems,
         },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -104,32 +147,97 @@ const TrainerDashboard = () => {
       modalSetter(false);
       fetchMembers();
 
+      // Reset
       if (type === "training") {
-        setProgramData({ title: "", description: "" });
-        setFile(null);
+        setProgramData({ title: "", description: "", items: [] });
       } else {
-        setMealData({ title: "", description: "" });
-        setMealFile(null);
+        setMealData({ title: "", description: "", items: [] });
       }
 
-      setTimeout(() => setSuccess(""), 4000); // Clear message after 4s
+      setTimeout(() => setSuccess(""), 4000);
     } catch (err) {
       console.error("Assignment failed", err);
     }
   };
+
+  const renderModal = (type, showModal, setShowModal, data, setData) => (
+    <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+      <Modal.Header closeButton>
+        <Modal.Title>
+          Assign {type === "training" ? "Training" : "Meal"} to {selectedMember?.name}
+        </Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        <Form.Group className="mb-3">
+          <Form.Label>Title</Form.Label>
+          <Form.Control
+            type="text"
+            value={data.title}
+            onChange={(e) => setData({ ...data, title: e.target.value })}
+          />
+        </Form.Group>
+        <Form.Group className="mb-3">
+          <Form.Label>Description</Form.Label>
+          <Form.Control
+            as="textarea"
+            rows={2}
+            value={data.description}
+            onChange={(e) => setData({ ...data, description: e.target.value })}
+          />
+        </Form.Group>
+
+        {data.items.map((item, index) => (
+          <div key={index} className="border p-2 mb-3">
+            <Form.Group className="mb-2">
+              <Form.Label>Item Title</Form.Label>
+              <Form.Control
+                type="text"
+                value={item.title}
+                onChange={(e) => handleItemChange(type, index, "title", e.target.value)}
+              />
+            </Form.Group>
+            <Form.Group className="mb-2">
+              <Form.Label>Item Description</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={2}
+                value={item.description}
+                onChange={(e) => handleItemChange(type, index, "description", e.target.value)}
+              />
+            </Form.Group>
+            <Form.Group className="mb-2">
+              <Form.Label>Upload Media</Form.Label>
+              <Form.Control
+                type="file"
+                onChange={(e) => handleFileChange(type, index, e.target.files[0])}
+              />
+            </Form.Group>
+            <Button variant="danger" size="sm" onClick={() => removeItem(type, index)}>
+              Remove
+            </Button>
+          </div>
+        ))}
+
+        <Button onClick={() => addItem(type)} variant="secondary" className="mb-2">
+          + Add Item
+        </Button>
+      </Modal.Body>
+      <Modal.Footer>
+        <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
+        <Button onClick={() => handleAssign(type)}>Assign</Button>
+      </Modal.Footer>
+    </Modal>
+  );
 
   return (
     <Row className="trainer-layout">
       <Col md={2} className="p-0">
         <Sidebar />
       </Col>
-
       <Col md={10}>
         <Container className="py-4">
           <h2 className="text-center mb-4">Trainer Dashboard</h2>
-
           {success && <Alert variant="success">{success}</Alert>}
-
           <Table striped bordered hover>
             <thead>
               <tr>
@@ -148,14 +256,10 @@ const TrainerDashboard = () => {
                   <td>{m.email}</td>
                   <td>{m.isActive ? "Active" : "Inactive"}</td>
                   <td>
-                    <Button size="sm" onClick={() => openTrainingModal(m)}>
-                      Training
-                    </Button>
+                    <Button size="sm" onClick={() => openTrainingModal(m)}>Training</Button>
                   </td>
                   <td>
-                    <Button size="sm" variant="info" onClick={() => openMealModal(m)}>
-                      Meal Plan
-                    </Button>
+                    <Button size="sm" variant="info" onClick={() => openMealModal(m)}>Meal Plan</Button>
                   </td>
                   <td>
                     <Button
@@ -173,73 +277,9 @@ const TrainerDashboard = () => {
         </Container>
       </Col>
 
-      {/* Training Modal */}
-      <Modal show={showTrainingModal} onHide={() => setShowTrainingModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Assign Training to {selectedMember?.name}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form.Group className="mb-3">
-            <Form.Label>Title</Form.Label>
-            <Form.Control
-              type="text"
-              value={programData.title}
-              onChange={(e) => setProgramData({ ...programData, title: e.target.value })}
-            />
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>Description</Form.Label>
-            <Form.Control
-              as="textarea"
-              rows={3}
-              value={programData.description}
-              onChange={(e) => setProgramData({ ...programData, description: e.target.value })}
-            />
-          </Form.Group>
-          <Form.Group>
-            <Form.Label>Upload Media</Form.Label>
-            <Form.Control type="file" onChange={handleFileChange} />
-          </Form.Group>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowTrainingModal(false)}>Cancel</Button>
-          <Button onClick={() => handleAssign("training")}>Assign</Button>
-        </Modal.Footer>
-      </Modal>
-
-      {/* Meal Modal */}
-      <Modal show={showMealModal} onHide={() => setShowMealModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Assign Meal Plan to {selectedMember?.name}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form.Group className="mb-3">
-            <Form.Label>Title</Form.Label>
-            <Form.Control
-              type="text"
-              value={mealData.title}
-              onChange={(e) => setMealData({ ...mealData, title: e.target.value })}
-            />
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>Description</Form.Label>
-            <Form.Control
-              as="textarea"
-              rows={3}
-              value={mealData.description}
-              onChange={(e) => setMealData({ ...mealData, description: e.target.value })}
-            />
-          </Form.Group>
-          <Form.Group>
-            <Form.Label>Upload Media</Form.Label>
-            <Form.Control type="file" onChange={handleMealFileChange} />
-          </Form.Group>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowMealModal(false)}>Cancel</Button>
-          <Button onClick={() => handleAssign("meal")}>Assign</Button>
-        </Modal.Footer>
-      </Modal>
+      {/* Modals */}
+      {renderModal("training", showTrainingModal, setShowTrainingModal, programData, setProgramData)}
+      {renderModal("meal", showMealModal, setShowMealModal, mealData, setMealData)}
     </Row>
   );
 };
