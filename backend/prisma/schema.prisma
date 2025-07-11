@@ -7,47 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id          String   @id @default(uuid())
-  email       String   @unique
-  password    String
-  name        String
-  role        Role
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  programs    Program[]
-  payments    Payment[]
-}
-
-model Program {
-  id          String         @id @default(uuid())
-  type        ProgramType
-  title       String
-  description String?
-  user        User           @relation(fields: [userId], references: [id])
-  userId      String
-  items       ProgramItem[]  
-  createdAt   DateTime       @default(now())
-}
-
-model ProgramItem {
-  id          String   @id @default(uuid())
-  name        String
-  description String?
-  mediaUrl    String
-  program     Program  @relation(fields: [programId], references: [id])
-  programId   String
-  createdAt   DateTime @default(now())
-}
-
-model Payment {
-  id         String   @id @default(uuid())
-  user       User     @relation(fields: [userId], references: [id])
-  userId     String
-  tier       PlanTier
-  createdAt  DateTime @default(now())
-}
-
 enum Role {
   TRAINER
   MEMBER
@@ -62,4 +21,51 @@ enum PlanTier {
   BASIC
   SILVER
   GOLD
+}
+
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  password  String
+  name      String
+  role      Role
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  programs  Program[]
+  payments  Payment[]
+}
+
+model Program {
+  id           String         @id @default(uuid())
+  title        String
+  description  String
+  type         ProgramType
+  createdAt    DateTime       @default(now())
+
+  startDate    DateTime?      
+  endDate      DateTime?      
+  isLatest     Boolean        @default(false) 
+
+  member       User?          @relation(fields: [memberId], references: [id])
+  memberId     String?
+
+  items        Json?          // optional legacy support
+  programItems ProgramItem[]
+}
+
+model ProgramItem {
+  id          String  @id @default(uuid())
+  title       String? // Optional for flexibility
+  description String?
+  mediaUrl    String?
+  program     Program @relation(fields: [programId], references: [id])
+  programId   String
+}
+
+model Payment {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  tier      PlanTier
+  createdAt DateTime @default(now())
 }

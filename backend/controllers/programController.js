@@ -1,12 +1,9 @@
 const prisma = require("../prisma/client");
 
-// Trainer assigns a structured program with multiple items
+// Assign a structured program
 exports.assignProgram = async (req, res) => {
   try {
     const { title, description, userId, type, items } = req.body;
-
-    console.log("Assign Program Payload:", req.body);
-
     const normalizedType = type?.toUpperCase();
 
     if (!title || !userId || !normalizedType || !Array.isArray(items)) {
@@ -18,23 +15,34 @@ exports.assignProgram = async (req, res) => {
       return res.status(400).json({ error: "Invalid type. Must be TRAINING or MEAL" });
     }
 
+    // Mark previous as not latest
+    await prisma.program.updateMany({
+      where: { memberId: userId, type: normalizedType, isLatest: true },
+      data: { isLatest: false },
+    });
+
+    const now = new Date();
+    const endDate = new Date();
+    endDate.setDate(now.getDate() + 14);
+
     const program = await prisma.program.create({
       data: {
         title,
         description: description || "",
         type: normalizedType,
-        userId,
-        items: {
+        memberId: userId,
+        startDate: now,
+        endDate,
+        isLatest: true,
+        programItems: {
           create: items.map((item) => ({
-            name: item.title, 
+            title: item.title,
             description: item.description || "",
             mediaUrl: item.mediaUrl || "",
           })),
         },
       },
-      include: {
-        items: true,
-      },
+      include: { programItems: true, member: true },
     });
 
     res.status(201).json(program);
@@ -44,16 +52,19 @@ exports.assignProgram = async (req, res) => {
   }
 };
 
-// Member fetches their own assigned programs including items
+// Get member's programs (new/past)
 exports.getMyPrograms = async (req, res) => {
   try {
-    const programs = await prisma.program.findMany({
-      where: { userId: req.user.id },
+    const allPrograms = await prisma.program.findMany({
+      where: { memberId: req.user.id },
       orderBy: { createdAt: "desc" },
-      include: { items: true },
+      include: { programItems: true },
     });
 
-    res.json(programs);
+    const newPrograms = allPrograms.filter((p) => p.isLatest);
+    const oldPrograms = allPrograms.filter((p) => !p.isLatest);
+
+    res.json({ newPrograms, oldPrograms });
   } catch (error) {
     console.error("Failed to fetch programs:", error);
     res.status(500).json({ error: "Failed to fetch programs", details: error.message });
