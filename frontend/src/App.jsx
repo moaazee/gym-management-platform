@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import TrainerDashboard from './pages/TrainerDashboard';
 import MemberDashboard from './pages/MemberDashboard';
+import MemberPrograms from './pages/MemberPrograms'; 
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         {/* Dashboards */}
         <Route path="/trainer" element={<TrainerDashboard />} />
         <Route path="/member" element={<MemberDashboard />} />
+        <Route path="/member-programs" element={<MemberPrograms />} />
       </Routes>
     </Router>
   );

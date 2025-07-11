@@ -68,3 +68,19 @@ button:hover {
 .text-center {
   text-align: center;
 }
+
+
+form select.form-select {
+  background-color: white;
+  border: 1px solid #dee2e6;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.program-filter-select {
+  background-color: #fff;
+  border: 1px solid #dee2e6;
+  padding: 0.5rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}

@@ -6,8 +6,7 @@ import {
   Modal,
   Table,
   Alert,
-  Row,
-  Col,
+  Card,
 } from "react-bootstrap";
 import axios from "axios";
 import Sidebar from "../components/Sidebar";
@@ -147,7 +146,6 @@ const TrainerDashboard = () => {
       modalSetter(false);
       fetchMembers();
 
-      // Reset
       if (type === "training") {
         setProgramData({ title: "", description: "", items: [] });
       } else {
@@ -168,59 +166,61 @@ const TrainerDashboard = () => {
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <Form.Group className="mb-3">
-          <Form.Label>Title</Form.Label>
-          <Form.Control
-            type="text"
-            value={data.title}
-            onChange={(e) => setData({ ...data, title: e.target.value })}
-          />
-        </Form.Group>
-        <Form.Group className="mb-3">
-          <Form.Label>Description</Form.Label>
-          <Form.Control
-            as="textarea"
-            rows={2}
-            value={data.description}
-            onChange={(e) => setData({ ...data, description: e.target.value })}
-          />
-        </Form.Group>
+        <div className="p-2">
+          <Form.Group className="mb-3">
+            <Form.Label>Title</Form.Label>
+            <Form.Control
+              type="text"
+              value={data.title}
+              onChange={(e) => setData({ ...data, title: e.target.value })}
+            />
+          </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>Description</Form.Label>
+            <Form.Control
+              as="textarea"
+              rows={2}
+              value={data.description}
+              onChange={(e) => setData({ ...data, description: e.target.value })}
+            />
+          </Form.Group>
 
-        {data.items.map((item, index) => (
-          <div key={index} className="border p-2 mb-3">
-            <Form.Group className="mb-2">
-              <Form.Label>Item Title</Form.Label>
-              <Form.Control
-                type="text"
-                value={item.title}
-                onChange={(e) => handleItemChange(type, index, "title", e.target.value)}
-              />
-            </Form.Group>
-            <Form.Group className="mb-2">
-              <Form.Label>Item Description</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={2}
-                value={item.description}
-                onChange={(e) => handleItemChange(type, index, "description", e.target.value)}
-              />
-            </Form.Group>
-            <Form.Group className="mb-2">
-              <Form.Label>Upload Media</Form.Label>
-              <Form.Control
-                type="file"
-                onChange={(e) => handleFileChange(type, index, e.target.files[0])}
-              />
-            </Form.Group>
-            <Button variant="danger" size="sm" onClick={() => removeItem(type, index)}>
-              Remove
-            </Button>
-          </div>
-        ))}
+          {data.items.map((item, index) => (
+            <div key={index} className="border rounded p-3 mb-3 bg-light">
+              <Form.Group className="mb-2">
+                <Form.Label>Item Title</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={item.title}
+                  onChange={(e) => handleItemChange(type, index, "title", e.target.value)}
+                />
+              </Form.Group>
+              <Form.Group className="mb-2">
+                <Form.Label>Item Description</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={2}
+                  value={item.description}
+                  onChange={(e) => handleItemChange(type, index, "description", e.target.value)}
+                />
+              </Form.Group>
+              <Form.Group className="mb-2">
+                <Form.Label>Upload Media</Form.Label>
+                <Form.Control
+                  type="file"
+                  onChange={(e) => handleFileChange(type, index, e.target.files[0])}
+                />
+              </Form.Group>
+              <Button variant="outline-danger" size="sm" onClick={() => removeItem(type, index)}>
+                Remove Item
+              </Button>
+            </div>
+          ))}
 
-        <Button onClick={() => addItem(type)} variant="secondary" className="mb-2">
-          + Add Item
-        </Button>
+          <Button onClick={() => addItem(type)} variant="secondary" className="mb-2 w-100">
+            + Add Item
+          </Button>
+        </div>
       </Modal.Body>
       <Modal.Footer>
         <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
@@ -230,57 +230,71 @@ const TrainerDashboard = () => {
   );
 
   return (
-    <Row className="trainer-layout">
-      <Col md={2} className="p-0">
+    <div className="d-flex trainer-layout">
+      <div className="sidebar-container">
         <Sidebar />
-      </Col>
-      <Col md={10}>
-        <Container className="py-4">
-          <h2 className="text-center mb-4">Trainer Dashboard</h2>
-          {success && <Alert variant="success">{success}</Alert>}
-          <Table striped bordered hover>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Status</th>
-                <th>Assign Training</th>
-                <th>Assign Meals</th>
-                <th>Toggle</th>
-              </tr>
-            </thead>
-            <tbody>
-              {members.map((m) => (
-                <tr key={m.id}>
-                  <td>{m.name}</td>
-                  <td>{m.email}</td>
-                  <td>{m.isActive ? "Active" : "Inactive"}</td>
-                  <td>
-                    <Button size="sm" onClick={() => openTrainingModal(m)}>Training</Button>
-                  </td>
-                  <td>
-                    <Button size="sm" variant="info" onClick={() => openMealModal(m)}>Meal Plan</Button>
-                  </td>
-                  <td>
-                    <Button
-                      size="sm"
-                      variant={m.isActive ? "danger" : "success"}
-                      onClick={() => toggleStatus(m.id)}
-                    >
-                      {m.isActive ? "Deactivate" : "Activate"}
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-        </Container>
-      </Col>
+      </div>
 
-      {/* Modals */}
+      <div className="trainer-content flex-grow-1">
+        <Container fluid className="py-4">
+          <h2 className="text-center mb-4 fw-bold">Trainer Dashboard</h2>
+
+          {success && <Alert variant="success">{success}</Alert>}
+
+          <Card className="shadow-sm">
+            <Card.Body>
+              <Table bordered hover responsive>
+                <thead className="table-dark">
+                  <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Status</th>
+                    <th>Assign Training</th>
+                    <th>Assign Meals</th>
+                    <th>Toggle</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {members.map((m) => (
+                    <tr key={m.id}>
+                      <td>{m.name}</td>
+                      <td>{m.email}</td>
+                      <td>
+                        <span className={`badge rounded-pill ${m.isActive ? "bg-success" : "bg-secondary"}`}>
+                          {m.isActive ? "Active" : "Inactive"}
+                        </span>
+                      </td>
+                      <td>
+                        <Button size="sm" variant="primary" onClick={() => openTrainingModal(m)}>
+                          Assign
+                        </Button>
+                      </td>
+                      <td>
+                        <Button size="sm" variant="info" onClick={() => openMealModal(m)}>
+                          Assign
+                        </Button>
+                      </td>
+                      <td>
+                        <Button
+                          size="sm"
+                          variant={m.isActive ? "danger" : "success"}
+                          onClick={() => toggleStatus(m.id)}
+                        >
+                          {m.isActive ? "Deactivate" : "Activate"}
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            </Card.Body>
+          </Card>
+        </Container>
+      </div>
+
       {renderModal("training", showTrainingModal, setShowTrainingModal, programData, setProgramData)}
       {renderModal("meal", showMealModal, setShowMealModal, mealData, setMealData)}
-    </Row>
+    </div>
   );
 };
 
